@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaf diseases Classifier with EfficientNetB7+MHA</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #2E7D32;
+            --accent-color: #8BC34A;
+            --light-color: #F1F8E9;
+            --dark-color: #1B5E20;
+            --error-color: #F44336;
+            --text-color: #333;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--light-color);
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 30px;
+            margin-top: 20px;
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.2rem;
+        }
+        
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            background-color: #f8f8f8;
+            border: none;
+            flex: 1;
+            text-align: center;
+            font-weight: 600;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .tab:hover {
+            background-color: #e8e8e8;
+        }
+        
+        .tab.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        #preview, #camera-preview {
+            max-width: 100%;
+            max-height: 400px;
+            margin: 20px auto;
+            display: none;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            object-fit: contain;
+        }
+        
+        #result {
+            margin-top: 25px;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            background-color: var(--light-color);
+            font-weight: bold;
+            text-align: center;
+            transition: var(--transition);
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        button:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .file-upload {
+            display: inline-block;
+            padding: 12px 20px;
+            background-color: var(--accent-color);
+            color: white;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+            margin-bottom: 15px;
+        }
+        
+        .file-upload:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        #camera-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .prediction-card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 15px;
+            margin-top: 20px;
+            box-shadow: var(--box-shadow);
+            text-align: left;
+        }
+        
+        .prediction-card h3 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .prediction-item {
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .confidence-bar {
+            height: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        
+        .confidence-level {
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 5px;
+        }
+        
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .tab {
+                padding: 10px 15px;
+                font-size: 0.9rem;
+            }
+            
+            button {
+                padding: 10px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Leaf Disease Classifier with EfficientNetB7+MHA</h1>
+    
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('upload')"><i class="fas fa-upload"></i> Upload Image</div>
+            <div class="tab" onclick="switchTab('camera')"><i class="fas fa-camera"></i> Camera Capture</div>
+        </div>
+
+        <div id="upload-section">
+            <label for="fileInput" class="file-upload">
+                <i class="fas fa-file-image"></i> Choose Image
+            </label>
+            <input type="file" id="fileInput" accept="image/*">
+            <img id="preview" src="#" alt="Image Preview">
+            <div>
+                <button id="classifyBtn" onclick="classifyImage()">
+                    <i class="fas fa-search"></i> Classify Image
+                </button>
+            </div>
+        </div>
+
+        <div id="camera-section" class="hidden">
+            <video id="camera-preview" autoplay playsinline></video>
+            <div id="camera-controls">
+                <button onclick="startCamera()">
+                    <i class="fas fa-video"></i> Start Camera
+                </button>
+                <button onclick="captureImage()">
+                    <i class="fas fa-camera"></i> Capture
+                </button>
+                <button onclick="classifyImage()">
+                    <i class="fas fa-search"></i> Classify Image
+                </button>
+            </div>
+        </div>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        let currentTab = 'upload';
+        let videoStream = null;
+
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // Update tab styling
+            document.querySelectorAll('.tab').forEach(t => {
+                t.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Show/hide sections
+            if (tab === 'upload') {
+                document.getElementById('upload-section').classList.remove('hidden');
+                document.getElementById('camera-section').classList.add('hidden');
+                stopCamera();
+            } else {
+                document.getElementById('upload-section').classList.add('hidden');
+                document.getElementById('camera-section').classList.remove('hidden');
+                startCamera();
+            }
+
+            // Reset result and preview
+            document.getElementById('result').innerHTML = '';
+            document.getElementById('preview').style.display = 'none';
+            document.getElementById('camera-preview').style.display = 'none';
+        }
+
+        // File Upload Handling
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const preview = document.getElementById('preview');
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Classify Image Function
+        function classifyImage() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="loading"></div> Classifying...';
+            resultDiv.style.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--light-color');
+
+            if (currentTab === 'upload') {
+                const fileInput = document.getElementById('fileInput');
+                const file = fileInput.files[0];
+
+                if (!file) {
+                    resultDiv.innerHTML = '<i class="fas fa-exclamation-circle" style="color: var(--error-color)"></i> Please select an image first.';
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('file', file);
+
+                fetch('/classify', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        resultDiv.innerHTML = `<i class="fas fa-exclamation-circle" style="color: var(--error-color)"></i> Error: ${data.error}`;
+                    } else {
+                        // Extract confidence percentage value
+                        const confidenceValue = parseFloat(data.confidence.replace('%', ''));
+                        
+                        resultDiv.innerHTML = `
+                            <div class="prediction-card">
+                                <h3><i class="fas fa-leaf"></i> Analysis Result</h3>
+                                <div class="prediction-item">
+                                    <strong>Prediction:</strong> ${data.prediction}
+                                </div>
+                                <div class="prediction-item">
+                                    <strong>Confidence:</strong> ${data.confidence}
+                                </div>
+                                <div class="confidence-bar">
+                                    <div class="confidence-level" style="width: ${confidenceValue}%"></div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    resultDiv.innerHTML = `<i class="fas fa-exclamation-circle" style="color: var(--error-color)"></i> Error: ${error}`;
+                });
+            } else if (currentTab === 'camera') {
+                const canvas = document.createElement('canvas');
+                const video = document.getElementById('camera-preview');
+                
+                if (!video.srcObject) {
+                    resultDiv.innerHTML = '<i class="fas fa-exclamation-circle" style="color: var(--error-color)"></i> Please start the camera first.';
+                    return;
+                }
+                
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                
+                const imageDataUrl = canvas.toDataURL('image/png');
+
+                fetch('/classify_camera', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ image: imageDataUrl })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        resultDiv.innerHTML = `<i class="fas fa-exclamation-circle" style="color: var(--error-color)"></i> Error: ${data.error}`;
+                    } else {
+                        // Extract confidence percentage value
+                        const confidenceValue = parseFloat(data.confidence.replace('%', ''));
+                        
+                        resultDiv.innerHTML = `
+                            <div class="prediction-card">
+                                <h3><i class="fas fa-leaf"></i> Analysis Result</h3>
+                                <div class="prediction-item">
+                                    <strong>Prediction:</strong> ${data.prediction}
+                                </div>
+                                <div class="prediction-item">
+                                    <strong>Confidence:</strong> ${data.confidence}
+                                </div>
+                                <div class="confidence-bar">
+                                    <div class="confidence-level" style="width: ${confidenceValue}%"></div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    resultDiv.innerHTML = `<i class="fas fa-exclamation-circle" style="color: var(--error-color)"></i> Error: ${error}`;
+                });
+            }
+        }
+
+        // Camera Handling
+        function startCamera() {
+            const video = document.getElementById('camera-preview');
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="loading"></div> Starting camera...';
+            
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    videoStream = stream;
+                    video.srcObject = stream;
+                    video.style.display = 'block';
+                    resultDiv.innerHTML = '<i class="fas fa-check-circle" style="color: var(--primary-color)"></i> Camera started successfully. You can now capture an image.';
+                    setTimeout(() => {
+                        if (resultDiv.innerHTML.includes('Camera started successfully')) {
+                            resultDiv.innerHTML = '';
+                        }
+                    }, 3000);
+                })
+                .catch(error => {
+                    console.error('Error accessing camera:', error);
+                    resultDiv.innerHTML = '<i class="fas fa-exclamation-circle" style="color: var(--error-color)"></i> Could not access camera. Please check permissions.';
+                });
+        }
+
+        function stopCamera() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+                const video = document.getElementById('camera-preview');
+                video.style.display = 'none';
+            }
+        }
+
+        function captureImage() {
+            const video = document.getElementById('camera-preview');
+            const resultDiv = document.getElementById('result');
+            
+            if (!video.srcObject) {
+                resultDiv.innerHTML = '<i class="fas fa-exclamation-circle" style="color: var(--error-color)"></i> Please start the camera first.';
+                return;
+            }
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            
+            const imageDataUrl = canvas.toDataURL('image/png');
+            
+            // Display captured image
+            document.getElementById('camera-preview').style.display = 'block';
+            resultDiv.innerHTML = '<i class="fas fa-check-circle" style="color: var(--primary-color)"></i> Image captured successfully. You can now classify it.';
+            setTimeout(() => {
+                if (resultDiv.innerHTML.includes('Image captured successfully')) {
+                    resultDiv.innerHTML = '';
+                }
+            }, 3000);
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', stopCamera);
+    </script>
+</body>
+</html>
